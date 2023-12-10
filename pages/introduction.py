@@ -30,6 +30,7 @@ class Introduction:
             with st.spinner('Carregando dados...'):
                 st.dataframe(self.df.toPandas())
                 msg = st.success('Dados carregados com sucesso.')
+                time.sleep(10)
                 msg.empty()
 
         st.text('Para obter as 10 músicas com a maior duração, empregamos o seguinte comando:')
