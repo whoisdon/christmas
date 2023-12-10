@@ -57,19 +57,19 @@ class Graphics:
         return style
 
     def specify(self, df, size):
-    df = df.limit(size)
-    df = df.withColumn('artists', explode(split(df['artists'], ';'))).withColumn('artists', regexp_replace('artists', ' e ', ';'))
-
-    artists = df.select('artists').distinct().rdd.flatMap(lambda x: x).collect()
-
-    col1, col2 = st.beta_columns(2)
-
-    with col1:
-        artist = st.selectbox('Selecione um artista', artists)
-
-    musics = df.select('artists', 'album_name', 'track_name', 'track_genre').filter(df.artists == artist)
+        df = df.limit(size)
+        df = df.withColumn('artists', explode(split(df['artists'], ';'))).withColumn('artists', regexp_replace('artists', ' e ', ';'))
     
-    track_df = musics.select('track_name').limit(size)
+        artists = df.select('artists').distinct().rdd.flatMap(lambda x: x).collect()
+    
+        col1, col2 = st.beta_columns(2)
+    
+        with col1:
+            artist = st.selectbox('Selecione um artista', artists)
+    
+        musics = df.select('artists', 'album_name', 'track_name', 'track_genre').filter(df.artists == artist)
+        
+        track_df = musics.select('track_name').limit(size)
     track_df_pandas = track_df.toPandas()
 
     with col2:
