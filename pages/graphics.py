@@ -2,8 +2,8 @@ import requests
 import streamlit as st
 import plotly.express as px
 
-from pyspark.sql.functions import col, when
 from bs4 import BeautifulSoup
+from pyspark.sql.functions import col, when, split, explode, regexp_replace
 
 class Graphics:
     def __init__(self, spark, df):
@@ -56,16 +56,24 @@ class Graphics:
 
         return style
 
-    def danceability(self, df):
-        df = df.orderBy(df.danceability.desc())
+    def specify(self, df, size):
+    df = df.limit(size)
+    df = df.withColumn('artists', explode(split(df['artists'], ';'))).withColumn('artists', regexp_replace('artists', ' e ', ';'))
 
-        st.markdown("<h2 style='text-align: center;'>Músicas Mais Dançantes</h2>", unsafe_allow_html=True)
-        st.bar_chart(df.select('danceability').toPandas(), height=300)
+    artists = df.select('artists').distinct().rdd.flatMap(lambda x: x).collect()
 
-        df_pandas = df.select('track_name', 'danceability').toPandas()
-        fig = px.bar(df_pandas, x='danceability', y='track_name', orientation='h', height=500, width=1200)
+    col1, col2 = st.beta_columns(2)
 
-        st.plotly_chart(fig)
+    with col1:
+        artist = st.selectbox('Selecione um artista', artists)
+
+    musics = df.select('artists', 'album_name', 'track_name', 'track_genre').filter(df.artists == artist)
+    
+    track_df = musics.select('track_name').limit(size)
+    track_df_pandas = track_df.toPandas()
+
+    with col2:
+        st.write(track_df_pandas)
 
     def display(self):
         num_musicas = st.number_input('Digite o número de músicas que deseja verificar', min_value=1, max_value=self.df.count(), value=100)
@@ -94,4 +102,4 @@ class Graphics:
             track_id = df_album.select("track_id").collect()[0]["track_id"]
             self.get_track_image(track_id)
 
-        self.danceability(df)
+        self.specify(df, num_musicas)
